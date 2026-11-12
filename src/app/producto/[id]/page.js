@@ -6,15 +6,15 @@ import {
   Phone, 
   MapPin, 
   Store, 
-  ArrowLeft, 
   ShieldCheck, 
   Truck, 
-  Clock, 
   CheckCircle2, 
   AlertCircle, 
   Share2, 
   ChevronRight,
-  PackageCheck
+  Wallet,
+  Copy,
+  Check
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,6 +28,7 @@ export default function DetalleProducto() {
   const [cargando, setCargando] = useState(true);
   const [cantidad, setCantidad] = useState(1);
   const [copiado, setCopiado] = useState(false);
+  const [datoCopiado, setDatoCopiado] = useState(null);
 
   useEffect(() => {
     if (productId) {
@@ -65,6 +66,14 @@ export default function DetalleProducto() {
     }
   }
 
+  function copiarDatoPago(texto, index) {
+    if (navigator.clipboard && texto) {
+      navigator.clipboard.writeText(texto);
+      setDatoCopiado(index);
+      setTimeout(() => setDatoCopiado(null), 2000);
+    }
+  }
+
   if (cargando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-100">
@@ -81,12 +90,13 @@ export default function DetalleProducto() {
   const estaAgotado = producto.estado === "Agotado" || producto.stock <= 0;
   const precioUnitario = Number(producto.precio);
   const precioTotal = precioUnitario * cantidad;
+  const metodosPago = Array.isArray(producto.metodos_pago) ? producto.metodos_pago : [];
 
   const mensajeWhatsApp = encodeURIComponent(
     `¡Hola Don/Doña ${producto.productores?.nombre_completo}! Vi su producto "${producto.nombre}" en Raíces del Occidente de Boyacá.\n\n` +
     `🛒 Cantidad deseada: ${cantidad} ${producto.unidad_medida}(s)\n` +
     `💰 Total estimado: $${precioTotal.toLocaleString("es-CO")} COP\n\n` +
-    `¿Tiene disponibilidad para coordinar la entrega en ${producto.productores?.municipio}?`
+    `¿Tiene disponibilidad para coordinar la entrega y el pago en ${producto.productores?.municipio}?`
   );
 
   return (
@@ -107,7 +117,7 @@ export default function DetalleProducto() {
                 Raíces del Occidente
               </span>
               <span className="text-[10px] font-bold text-zajuna-green block tracking-wider uppercase">
-                Zajuna Campo · Boyacá
+                Las Quinchas · Boyacá
               </span>
             </div>
           </Link>
@@ -147,11 +157,11 @@ export default function DetalleProducto() {
         <span className="text-stone-800 font-bold truncate">{producto.nombre}</span>
       </div>
 
-      {/* CONTENEDOR PRINCIPAL ESTILO MERCADO LIBRE */}
+      {/* CONTENEDOR PRINCIPAL */}
       <main className="max-w-7xl mx-auto w-full px-4 pb-16 flex-1">
         <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* COLUMNA IZQUIERDA: FOTO GRANDE DEL PRODUCTO (7 de 12) */}
+          {/* COLUMNA IZQUIERDA (7 de 12) */}
           <div className="lg:col-span-7 flex flex-col">
             <div className="relative w-full h-[420px] sm:h-[500px] bg-stone-50 rounded-2xl overflow-hidden border border-stone-100 flex items-center justify-center group">
               <img
@@ -166,14 +176,12 @@ export default function DetalleProducto() {
               )}
             </div>
 
-            {/* Ficha Informativa y Descripción */}
             <div className="mt-8 border-t border-stone-100 pt-6">
               <h3 className="text-lg font-black text-stone-900 mb-3">Descripción del Producto</h3>
               <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-line">
                 {producto.descripcion || "Este producto campesino es obtenido directamente de parcelas tradicionales del Occidente de Boyacá, cumpliendo con buenas prácticas agropecuarias sin químicos agresivos."}
               </p>
 
-              {/* Ficha Técnica */}
               <div className="mt-6 bg-stone-50 rounded-2xl p-4 border border-stone-200/80">
                 <h4 className="text-xs font-black text-stone-700 uppercase tracking-wider mb-3">
                   Detalles de Comercialización
@@ -196,10 +204,9 @@ export default function DetalleProducto() {
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: PANEL DE COMPRA / COTIZACIÓN (5 de 12) */}
-          <div className="lg:col-span-5 flex flex-col justify-between">
+          {/* COLUMNA DERECHA (5 de 12) */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
             <div className="border border-stone-200 rounded-2xl p-6 bg-white shadow-sm">
-              {/* Categoría y Compartir */}
               <div className="flex items-center justify-between text-xs text-stone-400 mb-2">
                 <span>Nuevo · Cosecha Directa</span>
                 <button
@@ -211,12 +218,10 @@ export default function DetalleProducto() {
                 </button>
               </div>
 
-              {/* Título */}
               <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 leading-tight mb-3">
                 {producto.nombre}
               </h1>
 
-              {/* Precio */}
               <div className="mb-4">
                 <span className="text-3xl sm:text-4xl font-black text-zajuna-purple">
                   ${precioUnitario.toLocaleString("es-CO")}
@@ -226,7 +231,6 @@ export default function DetalleProducto() {
                 </span>
               </div>
 
-              {/* Disponibilidad / Stock */}
               <div className="mb-6">
                 {estaAgotado ? (
                   <div className="inline-flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-red-200">
@@ -241,7 +245,6 @@ export default function DetalleProducto() {
                 )}
               </div>
 
-              {/* Selector de Cantidades (Si está disponible) */}
               {!estaAgotado && (
                 <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 mb-6">
                   <div className="flex items-center justify-between mb-3">
@@ -276,7 +279,6 @@ export default function DetalleProducto() {
                 </div>
               )}
 
-              {/* Botón WhatsApp de Compra Directa */}
               {estaAgotado ? (
                 <button
                   disabled
@@ -292,9 +294,65 @@ export default function DetalleProducto() {
                   className="w-full bg-zajuna-green hover:bg-zajuna-greenLight text-white font-extrabold py-3.5 rounded-xl text-sm shadow-md transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02]"
                 >
                   <Phone className="w-4 h-4 text-zajuna-yellow" />
-                  Comprar con el Productor (WhatsApp)
+                  Coordinar Compra por WhatsApp
                 </a>
               )}
+
+              {/* SECCIÓN INFORMATIVA DE MÉTODOS DE PAGO */}
+              <div className="mt-6 border-t border-stone-100 pt-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Wallet className="w-4 h-4 text-zajuna-purple" />
+                  <h4 className="text-xs font-black text-stone-800 uppercase tracking-wider">
+                    Medios de Pago Aceptados
+                  </h4>
+                </div>
+                
+                {metodosPago.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {metodosPago.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex items-center justify-between bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-xs"
+                      >
+                        <div>
+                          <span className="font-extrabold text-zajuna-purple block">
+                            {item.metodo}
+                          </span>
+                          <span className="text-stone-700 font-semibold block mt-0.5">
+                            {item.dato}
+                          </span>
+                          {item.titular && (
+                            <span className="text-[11px] text-stone-400 block">
+                              Titular: {item.titular}
+                            </span>
+                          )}
+                        </div>
+                        {item.dato && item.metodo !== "Efectivo" && (
+                          <button
+                            type="button"
+                            onClick={() => copiarDatoPago(item.dato, idx)}
+                            className="p-2 text-stone-500 hover:text-zajuna-purple hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition"
+                            title="Copiar número o llave"
+                          >
+                            {datoCopiado === idx ? (
+                              <Check className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <p className="text-[11px] text-stone-400 italic mt-2">
+                      * El pago se realiza directamente al productor al coordinar por WhatsApp. Esta plataforma no procesa pagos en línea.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl border border-stone-200/60">
+                    Efectivo contra entrega o transferencia directa a acordar con el productor por WhatsApp.
+                  </p>
+                )}
+              </div>
 
               {/* Beneficios Institucionales */}
               <div className="mt-6 space-y-3 text-xs text-stone-500 border-t border-stone-100 pt-4">
@@ -309,8 +367,8 @@ export default function DetalleProducto() {
               </div>
             </div>
 
-            {/* Ficha del Productor que lo vende */}
-            <div className="mt-6 border border-stone-200 rounded-2xl p-5 bg-stone-50 flex items-start gap-3.5">
+            {/* Ficha del Productor */}
+            <div className="border border-stone-200 rounded-2xl p-5 bg-stone-50 flex items-start gap-3.5">
               <div className="h-11 w-11 bg-zajuna-purple text-zajuna-yellow rounded-xl flex items-center justify-center font-black flex-shrink-0 shadow-sm">
                 <Store className="w-5 h-5" />
               </div>
@@ -330,7 +388,6 @@ export default function DetalleProducto() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </main>

@@ -13,7 +13,8 @@ import {
   XCircle,
   ExternalLink,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Wallet
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,7 +45,8 @@ export default function AdminDashboard() {
     stock: 1,
     estado: "Disponible",
     destacado: false,
-    imagen_url: ""
+    imagen_url: "",
+    metodos_pago: []
   };
   const [formProducto, setFormProducto] = useState(estadoInicialProducto);
 
@@ -104,6 +106,29 @@ export default function AdminDashboard() {
     setFormProducto(prev => ({ ...prev, imagen_url: "" }));
   }
 
+  // Funciones para gestionar Métodos de Pago dinámicos
+  function handleAgregarMetodoPago() {
+    setFormProducto(prev => ({
+      ...prev,
+      metodos_pago: [...(prev.metodos_pago || []), { metodo: "Nequi", dato: "", titular: "" }]
+    }));
+  }
+
+  function handleActualizarMetodoPago(index, campo, valor) {
+    setFormProducto(prev => {
+      const copia = [...(prev.metodos_pago || [])];
+      copia[index] = { ...copia[index], [campo]: valor };
+      return { ...prev, metodos_pago: copia };
+    });
+  }
+
+  function handleEliminarMetodoPago(index) {
+    setFormProducto(prev => ({
+      ...prev,
+      metodos_pago: (prev.metodos_pago || []).filter((_, i) => i !== index)
+    }));
+  }
+
   // Activar modo edición cargando los datos del producto
   function handleEditarProducto(prod) {
     setProductoEnEdicion(prod.id);
@@ -117,7 +142,8 @@ export default function AdminDashboard() {
       stock: prod.stock ?? 1,
       estado: prod.estado || "Disponible",
       destacado: Boolean(prod.destacado),
-      imagen_url: prod.imagen_url || ""
+      imagen_url: prod.imagen_url || "",
+      metodos_pago: Array.isArray(prod.metodos_pago) ? prod.metodos_pago : []
     });
     setPreviewUrl(prod.imagen_url || null);
     setArchivoImagen(null);
@@ -161,6 +187,11 @@ export default function AdminDashboard() {
       urlFinalImagen = publicUrl;
     }
 
+    // Limpiar métodos de pago vacíos antes de guardar
+    const metodosLimpios = (formProducto.metodos_pago || []).filter(
+      (m) => m.dato.trim() !== "" || m.metodo === "Efectivo"
+    );
+
     const payload = {
       productor_id: formProducto.productor_id,
       categoria_id: Number(formProducto.categoria_id),
@@ -171,7 +202,8 @@ export default function AdminDashboard() {
       stock: parseInt(formProducto.stock, 10),
       estado: parseInt(formProducto.stock, 10) <= 0 ? "Agotado" : formProducto.estado,
       destacado: formProducto.destacado,
-      imagen_url: urlFinalImagen
+      imagen_url: urlFinalImagen,
+      metodos_pago: metodosLimpios
     };
 
     if (productoEnEdicion) {
@@ -326,7 +358,7 @@ export default function AdminDashboard() {
 
               <p className="text-xs text-stone-500 mb-4">
                 {productoEnEdicion
-                  ? "Edita precios, stock o disponibilidad sin tener que recrear el producto."
+                  ? "Edita precios, stock, métodos de pago o disponibilidad."
                   : "Asigna el producto, define el stock inicial y publica directo al catálogo."}
               </p>
 
@@ -446,6 +478,76 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* MÉTODOS DE PAGO (INFORMATIVO) */}
+                <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-stone-800 flex items-center gap-1.5">
+                      <Wallet className="w-3.5 h-3.5 text-zajuna-purple" />
+                      Métodos de Pago (Opcional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAgregarMetodoPago}
+                      className="bg-zajuna-purple hover:bg-zajuna-purpleLight text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition shadow-sm"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+
+                  {(!formProducto.metodos_pago || formProducto.metodos_pago.length === 0) ? (
+                    <p className="text-[11px] text-stone-400 italic">
+                      Sin cuentas agregadas. En el catálogo dirá &quot;A convenir por WhatsApp&quot;.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formProducto.metodos_pago.map((item, idx) => (
+                        <div key={idx} className="bg-white p-2.5 rounded-xl border border-stone-200 space-y-1.5 relative">
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={item.metodo}
+                              onChange={(e) => handleActualizarMetodoPago(idx, "metodo", e.target.value)}
+                              className="w-1/2 text-[11px] font-bold border border-stone-300 rounded-lg p-1.5 outline-none focus:border-zajuna-purple bg-stone-50"
+                            >
+                              <option value="Nequi">Nequi</option>
+                              <option value="Daviplata">Daviplata</option>
+                              <option value="Llave Bre-B">Llave Bre-B</option>
+                              <option value="Bancolombia">Bancolombia</option>
+                              <option value="Banco Agrario">Banco Agrario</option>
+                              <option value="Efectivo">Efectivo</option>
+                              <option value="Otro">Otro</option>
+                            </select>
+
+                            <input
+                              type="text"
+                              placeholder={item.metodo === "Efectivo" ? "Ej: Contra entrega" : "N° Cuenta o Llave"}
+                              value={item.dato}
+                              onChange={(e) => handleActualizarMetodoPago(idx, "dato", e.target.value)}
+                              className="w-1/2 text-[11px] border border-stone-300 rounded-lg p-1.5 outline-none focus:border-zajuna-purple"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarMetodoPago(idx)}
+                              className="text-red-500 hover:bg-red-50 p-1 rounded-md transition"
+                              title="Quitar método"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <input
+                            type="text"
+                            placeholder="Nombre del titular (ej: Don Jaime Pardo)"
+                            value={item.titular}
+                            onChange={(e) => handleActualizarMetodoPago(idx, "titular", e.target.value)}
+                            className="w-full text-[11px] border border-stone-200 rounded-lg p-1.5 outline-none focus:border-zajuna-purple text-stone-600"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Casilla Producto Destacado / Popular */}
                 <div className="flex items-center gap-2 pt-1">
                   <input
@@ -456,7 +558,7 @@ export default function AdminDashboard() {
                     className="w-4 h-4 rounded text-zajuna-purple focus:ring-zajuna-purple cursor-pointer"
                   />
                   <label htmlFor="chkDestacado" className="text-xs font-bold text-stone-700 cursor-pointer">
-                    Destacar en la sección "Populares de la Semana"
+                    Destacar en la sección &quot;Populares de la Semana&quot;
                   </label>
                 </div>
 
@@ -573,6 +675,11 @@ export default function AdminDashboard() {
                         <td className="p-3">
                           <span className="font-bold text-stone-800 block text-sm">{item.nombre}</span>
                           <span className="text-[10px] text-stone-400">Por {item.unidad_medida}</span>
+                          {Array.isArray(item.metodos_pago) && item.metodos_pago.length > 0 && (
+                            <span className="inline-block mt-0.5 text-[10px] font-semibold text-zajuna-purple bg-purple-50 px-1.5 py-0.5 rounded">
+                              {item.metodos_pago.length} método(s) de pago
+                            </span>
+                          )}
                         </td>
                         <td className="p-3">
                           <span className="font-semibold text-stone-700 block">{item.productores?.nombre_completo}</span>
